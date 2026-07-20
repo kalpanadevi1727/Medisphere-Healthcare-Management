@@ -1,0 +1,26 @@
+.dashboard{
+    background:#111827;
+    min-height:100vh;
+}
+
+.info-card{
+
+    background:#1f2937;
+
+    color:white;
+
+    border:1px solid #374151;
+
+    border-radius:15px;
+
+    transition:.3s;
+
+}
+
+.info-card:hover{
+
+    transform:translateY(-8px);
+
+    cursor:pointer;
+
+}

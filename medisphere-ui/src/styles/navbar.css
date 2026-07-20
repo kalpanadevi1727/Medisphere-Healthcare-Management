@@ -1,0 +1,39 @@
+.navbar-custom{
+
+    height:70px;
+
+    background:#1565C0;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:space-between;
+
+    padding:0 25px;
+
+}
+
+.logo{
+
+    color:white;
+
+    font-size:30px;
+
+    font-weight:bold;
+
+}
+
+.title{
+
+    color:white;
+
+    font-size:24px;
+
+}
+
+.user{
+
+    color:white;
+
+}
