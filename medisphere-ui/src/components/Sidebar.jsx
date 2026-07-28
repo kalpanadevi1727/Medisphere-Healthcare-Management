@@ -38,7 +38,8 @@ function Sidebar() {
                 minHeight: "100vh",
                 background: "#1f2937",
                 color: "white",
-                boxShadow: "3px 0 10px rgba(0,0,0,0.3)"
+                boxShadow: "3px 0 10px rgba(0,0,0,0.3)",
+                flexShrink: 0
             }}
         >
 

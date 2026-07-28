@@ -151,7 +151,6 @@ function HealthTwinList() {
                             className="form-control"
                             placeholder="🔍 Search by Patient ID, Blood Group, Disease..."
                             style={{
-                                width: "1250px",
                                 borderRadius: "10px"
                             }}
                             value={search}

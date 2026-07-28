@@ -125,7 +125,7 @@ def main():
     print("      MediSphere Kaggle Dataset Seeder Script       ")
     print("====================================================")
     
-    num_records = 25
+    num_records = 40
     print(f"Generating and sending {num_records} realistic healthcare entries...")
     
     success_count = 0
