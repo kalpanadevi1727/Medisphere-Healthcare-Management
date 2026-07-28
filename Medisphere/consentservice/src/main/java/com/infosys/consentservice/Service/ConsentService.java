@@ -63,7 +63,7 @@ public class ConsentService {
     }
 
     // Get By Patient Id
-    public ConsentResponseDTO getByPatientId(UUID patientId) {
+    public ConsentResponseDTO getByPatientId(String patientId) {
 
         Consent consent = repository.findByPatientId(patientId)
                 .orElseThrow(() -> new RuntimeException("Consent Not Found"));
@@ -139,7 +139,7 @@ public class ConsentService {
                 .toList();
     }
 
-    public void deleteByPatientId(UUID patientId) {
+    public void deleteByPatientId(String patientId) {
         repository.findByPatientId(patientId).ifPresent(consent -> repository.delete(consent));
     }
 }

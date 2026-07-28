@@ -12,7 +12,7 @@ import java.util.UUID;
 public class ConsentRequestDTO {
 
     @NotNull(message = "Patient Id is required")
-    private UUID patientId;
+    private String patientId;
 
     @NotBlank(message = "Consent Type is required")
     private String consenttype;

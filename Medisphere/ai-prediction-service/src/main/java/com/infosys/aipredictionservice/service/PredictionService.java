@@ -42,11 +42,11 @@ public class PredictionService {
     @Value("${medisphere.vitalsservice.url}")
     private String vitalsServiceUrl;
 
-    public List<RiskPrediction> getHistory(UUID patientId) {
+    public List<RiskPrediction> getHistory(String patientId) {
         return repository.findByPatientId(patientId);
     }
 
-    public Optional<RiskPrediction> getLatest(UUID patientId) {
+    public Optional<RiskPrediction> getLatest(String patientId) {
         return repository.findFirstByPatientIdOrderByPredictionDateDesc(patientId);
     }
 
@@ -54,15 +54,15 @@ public class PredictionService {
         repository.deleteById(id);
     }
 
-    public RiskPrediction predictCardioRisk(UUID patientId) {
+    public RiskPrediction predictCardioRisk(String patientId) {
         return runPrediction(patientId, "CARDIO");
     }
 
-    public RiskPrediction predictDiabetesRisk(UUID patientId) {
+    public RiskPrediction predictDiabetesRisk(String patientId) {
         return runPrediction(patientId, "DIABETES");
     }
 
-    private RiskPrediction runPrediction(UUID patientId, String riskType) {
+    private RiskPrediction runPrediction(String patientId, String riskType) {
         // 1. Fetch patient details
         PatientDTO patient = null;
         try {

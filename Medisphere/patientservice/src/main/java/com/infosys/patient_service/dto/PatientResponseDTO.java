@@ -8,7 +8,7 @@ import java.util.UUID;
 @Data
 public class PatientResponseDTO {
 
-    private UUID patientId;
+    private String patientId;
     private String firstname;
     private String lastname;
     private String gender;

@@ -11,6 +11,6 @@ import java.util.UUID;
 public interface FhirPatientRepository
         extends MongoRepository<FhirPatient, UUID> {
 
-    Optional<FhirPatient> findByPatientId(UUID patientId);
+    Optional<FhirPatient> findByPatientId(String patientId);
 
 }

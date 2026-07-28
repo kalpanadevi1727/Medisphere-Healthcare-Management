@@ -54,13 +54,13 @@ public class FhirService {
     }
 
     // Get one FHIR patient
-    public FhirPatient getPatientByPatientId(UUID patientId) {
+    public FhirPatient getPatientByPatientId(String patientId) {
 
         return repository.findByPatientId(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));
 
     }
-    public CompletePatientDTO getCompleteRecord(UUID patientId) {
+    public CompletePatientDTO getCompleteRecord(String patientId) {
 
         CompletePatientDTO dto = new CompletePatientDTO();
 
@@ -125,7 +125,7 @@ public class FhirService {
         return dto;
     }
 
-    public FhirPatient updatePatientDescription(UUID patientId, String description) {
+    public FhirPatient updatePatientDescription(String patientId, String description) {
         FhirPatient patient = repository.findByPatientId(patientId).orElse(null);
         if (patient == null) {
             try {
@@ -161,7 +161,7 @@ public class FhirService {
         return repository.save(patient);
     }
 
-    public void deleteByPatientId(UUID patientId) {
+    public void deleteByPatientId(String patientId) {
         repository.findByPatientId(patientId).ifPresent(patient -> repository.delete(patient));
     }
 }

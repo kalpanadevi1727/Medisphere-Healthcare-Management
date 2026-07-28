@@ -10,6 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface RiskPredictionRepository extends MongoRepository<RiskPrediction, String> {
-    List<RiskPrediction> findByPatientId(UUID patientId);
-    Optional<RiskPrediction> findFirstByPatientIdOrderByPredictionDateDesc(UUID patientId);
+    List<RiskPrediction> findByPatientId(String patientId);
+    Optional<RiskPrediction> findFirstByPatientIdOrderByPredictionDateDesc(String patientId);
 }

@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class PatientCreatedEvent {
 
-    private UUID patientId;
+    private String patientId;
     private String firstname;
     private String lastname;
     private String gender;

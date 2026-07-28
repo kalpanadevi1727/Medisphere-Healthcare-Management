@@ -66,7 +66,7 @@ public class HealthTwinService {
     }
 
     // NEW METHOD
-    public HealthTwinResponseDTO getByPatientId(UUID patientId){
+    public HealthTwinResponseDTO getByPatientId(String patientId){
 
         HealthTwin twin = repository.findByPatientId(patientId)
                 .orElseThrow(() ->
@@ -99,7 +99,7 @@ public class HealthTwinService {
         repository.deleteById(id);
     }
 
-    public void deleteByPatientId(UUID patientId) {
+    public void deleteByPatientId(String patientId) {
         repository.findByPatientId(patientId).ifPresent(twin -> repository.delete(twin));
     }
 

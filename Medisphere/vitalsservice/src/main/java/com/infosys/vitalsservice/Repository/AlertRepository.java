@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Repository
 public interface AlertRepository extends MongoRepository<Alert, UUID> {
-    List<Alert> findByPatientId(UUID patientId);
+    List<Alert> findByPatientId(String patientId);
     List<Alert> findByRoutingSpecialty(String routingSpecialty);
 }

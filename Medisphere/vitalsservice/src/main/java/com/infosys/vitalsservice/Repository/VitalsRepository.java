@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Repository
 public interface VitalsRepository extends MongoRepository<Vitals, UUID> {
-    List<Vitals> findByPatientId(UUID patientId);
-    Optional<Vitals> findTopByPatientIdOrderByRecordedAtDesc(UUID patientId);
-    void deleteByPatientId(UUID patientId);
+    List<Vitals> findByPatientId(String patientId);
+    Optional<Vitals> findTopByPatientIdOrderByRecordedAtDesc(String patientId);
+    void deleteByPatientId(String patientId);
 }

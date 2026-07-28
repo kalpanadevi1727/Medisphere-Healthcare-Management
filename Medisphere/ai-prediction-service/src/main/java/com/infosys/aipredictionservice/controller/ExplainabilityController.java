@@ -18,12 +18,12 @@ public class ExplainabilityController {
     private ExplainabilityService service;
 
     @PostMapping("/{patientId}/{riskType}")
-    public ResponseEntity<Explanation> generate(@PathVariable UUID patientId, @PathVariable String riskType) {
+    public ResponseEntity<Explanation> generate(@PathVariable String patientId, @PathVariable String riskType) {
         return ResponseEntity.ok(service.generateExplanation(patientId, riskType.toUpperCase()));
     }
 
     @GetMapping("/{patientId}/{riskType}")
-    public ResponseEntity<Explanation> get(@PathVariable UUID patientId, @PathVariable String riskType) {
+    public ResponseEntity<Explanation> get(@PathVariable String patientId, @PathVariable String riskType) {
         try {
             return ResponseEntity.ok(service.getExplanation(patientId, riskType.toUpperCase()));
         } catch (Exception e) {

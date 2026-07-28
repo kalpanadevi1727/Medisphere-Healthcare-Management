@@ -36,7 +36,7 @@ public class VitalsController {
     }
 
     @GetMapping("/patient/{patientId}")
-    public List<VitalsResponseDTO> getByPatientId(@PathVariable UUID patientId) {
+    public List<VitalsResponseDTO> getByPatientId(@PathVariable String patientId) {
 
         return service.getByPatientId(patientId);
     }
@@ -50,12 +50,12 @@ public class VitalsController {
     }
 
     @DeleteMapping("/patient/{patientId}")
-    public String deleteByPatientId(@PathVariable UUID patientId) {
+    public String deleteByPatientId(@PathVariable String patientId) {
         service.deleteByPatientId(patientId);
         return "Vitals Deleted Successfully";
     }
     @GetMapping("/latest/{patientId}")
-    public VitalsResponseDTO getLatest(@PathVariable UUID patientId) {
+    public VitalsResponseDTO getLatest(@PathVariable String patientId) {
 
         return service.getLatestByPatientId(patientId);
     }

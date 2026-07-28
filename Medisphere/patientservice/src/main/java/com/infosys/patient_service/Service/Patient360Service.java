@@ -12,7 +12,7 @@ public class Patient360Service {
     @Autowired
     private RestTemplate restTemplate;
 
-    public Patient360Response getPatient360(UUID patientId){
+    public Patient360Response getPatient360(String patientId){
 
         Patient360Response response = new Patient360Response();
 

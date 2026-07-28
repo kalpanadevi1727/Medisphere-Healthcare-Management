@@ -11,7 +11,7 @@ public class Alert {
 
     @Id
     private UUID alertId;
-    private UUID patientId;
+    private String patientId;
     private UUID vitalsId;
     private LocalDateTime timestamp;
     private String severity;
@@ -33,11 +33,11 @@ public class Alert {
         this.alertId = alertId;
     }
 
-    public UUID getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(UUID patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 

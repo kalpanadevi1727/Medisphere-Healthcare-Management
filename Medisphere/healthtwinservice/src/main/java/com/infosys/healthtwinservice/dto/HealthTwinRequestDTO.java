@@ -12,7 +12,7 @@ import java.util.UUID;
 public class HealthTwinRequestDTO {
 
     @NotNull(message = "Patient Id is required")
-    private UUID patientId;
+    private String patientId;
 
     @NotBlank(message = "Blood Group is required")
     private String bloodgroup;

@@ -17,7 +17,7 @@ public class RiskPrediction {
 
     @Id
     private String id;
-    private UUID patientId;
+    private String patientId;
     private String riskType;
     private double riskPercentage;
     private String riskLevel;

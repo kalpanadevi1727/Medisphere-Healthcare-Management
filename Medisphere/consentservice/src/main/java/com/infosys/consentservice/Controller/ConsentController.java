@@ -27,7 +27,7 @@ public class ConsentController {
 
     // Get By Patient Id
     @GetMapping("/patient/{patientId}")
-    public ConsentResponseDTO getByPatientId(@PathVariable UUID patientId) {
+    public ConsentResponseDTO getByPatientId(@PathVariable String patientId) {
         return service.getByPatientId(patientId);
     }
 
@@ -51,7 +51,7 @@ public class ConsentController {
     }
 
     @DeleteMapping("/patient/{patientId}")
-    public String deleteByPatientId(@PathVariable UUID patientId) {
+    public String deleteByPatientId(@PathVariable String patientId) {
         service.deleteByPatientId(patientId);
         return "Consent Deleted Successfully";
     }

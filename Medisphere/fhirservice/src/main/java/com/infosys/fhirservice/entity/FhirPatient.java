@@ -19,7 +19,7 @@ public class FhirPatient {
 
     private String resourceType;
 
-    private UUID patientId;
+    private String patientId;
 
     private String firstName;
 

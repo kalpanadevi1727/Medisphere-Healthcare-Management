@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PatientDTO {
-    private UUID patientId;
+    private String patientId;
     private String firstname;
     private String lastname;
     private String gender;

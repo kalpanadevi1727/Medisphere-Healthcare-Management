@@ -30,7 +30,9 @@ public class PatientService {
 
         Patient patient=new Patient();
 
-        patient.setPatientId(UUID.randomUUID());
+        long currentCount = repository.count();
+        String nextPatientId = "p" + (101 + currentCount);
+        patient.setPatientId(nextPatientId);
         patient.setFirstname(dto.getFirstname());
         patient.setLastname(dto.getLastname());
         patient.setGender(dto.getGender());
@@ -69,7 +71,7 @@ public class PatientService {
                 .collect(Collectors.toList());
     }
 
-    public PatientResponseDTO getPatient(UUID id){
+    public PatientResponseDTO getPatient(String id){
 
         Patient patient=repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));
@@ -77,7 +79,7 @@ public class PatientService {
         return convertToResponse(patient);
     }
 
-    public PatientResponseDTO updatePatient(UUID id, PatientRequestDTO dto){
+    public PatientResponseDTO updatePatient(String id, PatientRequestDTO dto){
 
         Patient patient=repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));
@@ -95,7 +97,7 @@ public class PatientService {
         return convertToResponse(patient);
     }
 
-    public void deletePatient(UUID id) {
+    public void deletePatient(String id) {
 
         if (!repository.existsById(id)) {
             throw new RuntimeException("Patient not found");
@@ -148,7 +150,7 @@ public class PatientService {
 
         return dto;
     }
-    public PatientResponseDTO getPatientByPatientId(UUID patientId) {
+    public PatientResponseDTO getPatientByPatientId(String patientId) {
 
         Patient patient = repository.findByPatientId(patientId)
                 .orElseThrow(() -> new RuntimeException("Patient Not Found"));

@@ -9,7 +9,7 @@ import java.util.UUID;
 public class VitalsRequestDTO {
 
     @NotNull(message = "Patient Id is required")
-    private UUID patientId;
+    private String patientId;
 
     @Min(value = 30, message = "Heartbeat must be at least 30 bpm")
     @Max(value = 220, message = "Heartbeat cannot exceed 220 bpm")

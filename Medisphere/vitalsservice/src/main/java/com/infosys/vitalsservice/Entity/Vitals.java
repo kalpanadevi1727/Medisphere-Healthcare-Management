@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Vitals {
     @Id
     private UUID vitalsId;
-    private UUID patientId;
+    private String patientId;
     private int heartbeat;
     private String bloodpressure;
     private int oxygenlevel;

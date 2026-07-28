@@ -32,14 +32,14 @@ public class PatientController {
     }
 
     @GetMapping("/{id}")
-    public PatientResponseDTO getById(@PathVariable UUID id){
+    public PatientResponseDTO getById(@PathVariable String id){
 
         return service.getPatient(id);
 
     }
 
     @PutMapping("/{id}")
-    public PatientResponseDTO update(@PathVariable UUID id,
+    public PatientResponseDTO update(@PathVariable String id,
                                      @Valid @RequestBody PatientRequestDTO dto){
 
         return service.updatePatient(id,dto);
@@ -48,14 +48,14 @@ public class PatientController {
 
 
     @DeleteMapping("/{id}")
-    public String delete(@PathVariable UUID id){
+    public String delete(@PathVariable String id){
 
         service.deletePatient(id);
 
         return "Patient Deleted Successfully";
     }
     @GetMapping("/patient/{patientId}")
-    public PatientResponseDTO getByPatientId(@PathVariable UUID patientId) {
+    public PatientResponseDTO getByPatientId(@PathVariable String patientId) {
 
         return service.getPatientByPatientId(patientId);
 

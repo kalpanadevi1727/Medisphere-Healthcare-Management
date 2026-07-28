@@ -93,7 +93,7 @@ public class VitalsService {
         return mapToDTO(vitals);
     }
 
-    public List<VitalsResponseDTO> getByPatientId(UUID patientId) {
+    public List<VitalsResponseDTO> getByPatientId(String patientId) {
 
         return repository.findByPatientId(patientId)
                 .stream()
@@ -106,7 +106,7 @@ public class VitalsService {
         repository.deleteById(id);
     }
 
-    public void deleteByPatientId(UUID patientId) {
+    public void deleteByPatientId(String patientId) {
         repository.deleteByPatientId(patientId);
     }
 
@@ -129,7 +129,7 @@ public class VitalsService {
 
         return dto;
     }
-    public VitalsResponseDTO getLatestByPatientId(UUID patientId) {
+    public VitalsResponseDTO getLatestByPatientId(String patientId) {
 
         Vitals vitals = repository
                 .findTopByPatientIdOrderByRecordedAtDesc(patientId)

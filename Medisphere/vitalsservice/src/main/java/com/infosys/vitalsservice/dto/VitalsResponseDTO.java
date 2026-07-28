@@ -9,7 +9,7 @@ import java.util.UUID;
 public class VitalsResponseDTO {
 
     private UUID vitalsId;
-    private UUID patientId;
+    private String patientId;
     private int heartbeat;
     private String bloodpressure;
     private int oxygenlevel;

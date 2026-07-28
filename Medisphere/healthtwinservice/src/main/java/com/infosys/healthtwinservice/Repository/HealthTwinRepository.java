@@ -8,5 +8,5 @@ import java.util.Optional;
 import java.util.UUID;
 @Repository
 public interface HealthTwinRepository extends MongoRepository<HealthTwin, UUID> {
-    Optional<HealthTwin> findByPatientId(UUID patientId);
+    Optional<HealthTwin> findByPatientId(String patientId);
 }

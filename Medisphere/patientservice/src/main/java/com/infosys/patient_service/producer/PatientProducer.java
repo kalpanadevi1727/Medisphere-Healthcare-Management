@@ -11,7 +11,7 @@ import java.util.UUID;
 public class PatientProducer {
 
     @Autowired
-    private KafkaTemplate<UUID, PatientCreatedEvent> kafkaTemplate;
+    private KafkaTemplate<String, PatientCreatedEvent> kafkaTemplate;
 
     private static final String TOPIC = "patient-created";
 

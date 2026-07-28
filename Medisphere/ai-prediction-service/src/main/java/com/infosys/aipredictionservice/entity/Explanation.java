@@ -17,7 +17,7 @@ public class Explanation {
 
     @Id
     private String id;
-    private UUID patientId;
+    private String patientId;
     private String riskType;
     private String risk;
     private List<String> topFactors;

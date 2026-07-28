@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ConsentRepository extends MongoRepository<Consent, UUID> {
-    Optional<Consent> findByPatientId(UUID patientId);
+    Optional<Consent> findByPatientId(String patientId);
 }

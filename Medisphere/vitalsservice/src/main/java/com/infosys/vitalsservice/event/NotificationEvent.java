@@ -6,7 +6,7 @@ import java.util.UUID;
 public class NotificationEvent {
 
     private UUID notificationId;
-    private UUID patientId;
+    private String patientId;
     private UUID alertId;
     private LocalDateTime timestamp;
     private String message;
@@ -24,11 +24,11 @@ public class NotificationEvent {
         this.notificationId = notificationId;
     }
 
-    public UUID getPatientId() {
+    public String getPatientId() {
         return patientId;
     }
 
-    public void setPatientId(UUID patientId) {
+    public void setPatientId(String patientId) {
         this.patientId = patientId;
     }
 

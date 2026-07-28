@@ -9,7 +9,7 @@ import java.util.UUID;
 public class ConsentResponseDTO {
 
     private UUID consentId;
-    private UUID patientId;
+    private String patientId;
     private String consenttype;
     private String status;
     private LocalDate granteddate;

@@ -11,7 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class HealthTwinDTO {
     private UUID twinId;
-    private UUID patientId;
+    private String patientId;
     private String bloodgroup;
     private double height;
     private double weight;

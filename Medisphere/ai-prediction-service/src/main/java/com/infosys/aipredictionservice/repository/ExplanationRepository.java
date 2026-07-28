@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ExplanationRepository extends MongoRepository<Explanation, String> {
-    Optional<Explanation> findByPatientIdAndRiskType(UUID patientId, String riskType);
+    Optional<Explanation> findByPatientIdAndRiskType(String patientId, String riskType);
 }

@@ -30,12 +30,12 @@ public class PredictionController {
     }
 
     @GetMapping("/history/{patientId}")
-    public ResponseEntity<List<RiskPrediction>> getHistory(@PathVariable UUID patientId) {
+    public ResponseEntity<List<RiskPrediction>> getHistory(@PathVariable String patientId) {
         return ResponseEntity.ok(service.getHistory(patientId));
     }
 
     @GetMapping("/latest/{patientId}")
-    public ResponseEntity<RiskPrediction> getLatest(@PathVariable UUID patientId) {
+    public ResponseEntity<RiskPrediction> getLatest(@PathVariable String patientId) {
         return service.getLatest(patientId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

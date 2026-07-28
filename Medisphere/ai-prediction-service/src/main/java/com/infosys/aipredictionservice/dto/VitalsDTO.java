@@ -11,7 +11,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class VitalsDTO {
     private UUID vitalsId;
-    private UUID patientId;
+    private String patientId;
     private int heartbeat;
     private String bloodpressure;
     private int oxygenlevel;

@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class PredictionResponse {
     private String id;
-    private UUID patientId;
+    private String patientId;
     private String riskType;
     private double riskPercentage;
     private String riskLevel;

@@ -147,7 +147,7 @@ public class VitalsStreamConsumer {
         return alert;
     }
 
-    private int fetchPatientAge(UUID patientId) {
+    private int fetchPatientAge(String patientId) {
         try {
             String url = "http://localhost:8081/patient/" + patientId;
             Map<String, Object> response = restTemplate.getForObject(url, Map.class);

@@ -17,7 +17,7 @@ public class Patient360Controller {
     private Patient360Service service;
 
     @GetMapping("/{patientId}")
-    public Patient360Response getPatient360(@PathVariable UUID patientId){
+    public Patient360Response getPatient360(@PathVariable String patientId){
 
         return service.getPatient360(patientId);
 

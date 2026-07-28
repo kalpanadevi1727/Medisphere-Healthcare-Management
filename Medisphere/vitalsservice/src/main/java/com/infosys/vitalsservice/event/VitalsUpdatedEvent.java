@@ -16,7 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class VitalsUpdatedEvent {
 
     private UUID vitalsId;
-    private UUID patientId;
+    private String patientId;
     private int heartbeat;
     private String bloodpressure;
     private int oxygenlevel;

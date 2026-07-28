@@ -56,13 +56,13 @@ public class HealthTwinController {
     }
 
     @DeleteMapping("/patient/{patientId}")
-    public String deleteByPatientId(@PathVariable UUID patientId) {
+    public String deleteByPatientId(@PathVariable String patientId) {
         service.deleteByPatientId(patientId);
         return "Health Twin Deleted Successfully";
     }
 
     @GetMapping("/patient/{patientId}")
-    public HealthTwinResponseDTO getByPatientId(@PathVariable UUID patientId){
+    public HealthTwinResponseDTO getByPatientId(@PathVariable String patientId){
 
         return service.getByPatientId(patientId);
     }

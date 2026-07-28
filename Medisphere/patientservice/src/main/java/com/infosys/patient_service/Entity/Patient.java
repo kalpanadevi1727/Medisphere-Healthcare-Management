@@ -16,7 +16,7 @@ import java.util.UUID;
 public class Patient {
 
     @Id
-    private UUID patientId;
+    private String patientId;
     private String firstname;
     private String lastname;
     private String gender;

@@ -8,7 +8,7 @@ import java.util.UUID;
 public class HealthTwinResponseDTO {
 
     private UUID twinId;
-    private UUID patientId;
+    private String patientId;
     private String bloodgroup;
     private double height;
     private double weight;

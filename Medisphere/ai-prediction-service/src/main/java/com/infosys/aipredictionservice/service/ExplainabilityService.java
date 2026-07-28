@@ -35,12 +35,12 @@ public class ExplainabilityService {
     @Value("${medisphere.vitalsservice.url}")
     private String vitalsServiceUrl;
 
-    public Explanation getExplanation(UUID patientId, String riskType) {
+    public Explanation getExplanation(String patientId, String riskType) {
         return repository.findByPatientIdAndRiskType(patientId, riskType)
                 .orElseThrow(() -> new RuntimeException("Explanation not generated yet for patient: " + patientId + " and type: " + riskType));
     }
 
-    public Explanation generateExplanation(UUID patientId, String riskType) {
+    public Explanation generateExplanation(String patientId, String riskType) {
         // Fetch patient
         PatientDTO patient = null;
         try {
