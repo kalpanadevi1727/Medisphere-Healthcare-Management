@@ -21,8 +21,7 @@ import ViewFhir from "./pages/fhir/ViewFhir";
 import PatientMonitor from "./pages/patientmonitor/PatientMonitor";
 import EditVitals from "./pages/vitals/EditVitals";
 import PredictionPage from "./pages/prediction/PredictionPage";
-
-
+import PortalGate from "./components/PortalGate";
 
 function App() {
 
@@ -30,47 +29,51 @@ function App() {
 
         <BrowserRouter>
 
-            <Routes>
+            <PortalGate>
 
-                <Route
-                    path="/"
-                    element={<Dashboard />}
-                />
+                <Routes>
 
-                <Route
-                    path="/patient"
-                    element={<PatientList />}
-                />
+                    <Route
+                        path="/"
+                        element={<Dashboard />}
+                    />
 
-                <Route
-                    path="/patient/add"
-                    element={<AddPatient />}
-                />
-                <Route path="/patient/view/:id" element={<ViewPatient />} />
-                <Route path="/patient/edit/:id" element={<EditPatient />} />
-                <Route path="/healthtwin" element={<HealthTwinList />} />
-                <Route path="/healthtwin/add" element={<AddHealthTwin />} />
-                <Route path="/healthtwin/edit/:id" element={<EditHealthTwin />} />
-                <Route path="/healthtwin/view/:id" element={<ViewHealthTwin />} />
-                <Route path="/vitals" element={<VitalsList />} />
-                <Route path="/vitals/add" element={<AddVitals />} />
-                <Route path="/vitals/view/:id" element={<ViewVitals />} />
-                <Route path="/fhir" element={<FhirList />} />
-                <Route path="/fhir/view/:id" element={<ViewFhir />} />
-                <Route path="/consent" element={<ConsentList />} />
-                <Route path="/patient-monitor" element={<PatientMonitor />} />
-                <Route path="/prediction" element={<PredictionPage />} />
-                <Route
-    path="/vitals/edit/:id"
-    element={<EditVitals />}
-/>
+                    <Route
+                        path="/patient"
+                        element={<PatientList />}
+                    />
 
-                        <Route path="/consent/add" element={<AddConsent />} />
+                    <Route
+                        path="/patient/add"
+                        element={<AddPatient />}
+                    />
+                    <Route path="/patient/view/:id" element={<ViewPatient />} />
+                    <Route path="/patient/edit/:id" element={<EditPatient />} />
+                    <Route path="/healthtwin" element={<HealthTwinList />} />
+                    <Route path="/healthtwin/add" element={<AddHealthTwin />} />
+                    <Route path="/healthtwin/edit/:id" element={<EditHealthTwin />} />
+                    <Route path="/healthtwin/view/:id" element={<ViewHealthTwin />} />
+                    <Route path="/vitals" element={<VitalsList />} />
+                    <Route path="/vitals/add" element={<AddVitals />} />
+                    <Route path="/vitals/view/:id" element={<ViewVitals />} />
+                    <Route path="/fhir" element={<FhirList />} />
+                    <Route path="/fhir/view/:id" element={<ViewFhir />} />
+                    <Route path="/consent" element={<ConsentList />} />
+                    <Route path="/patient-monitor" element={<PatientMonitor />} />
+                    <Route path="/prediction" element={<PredictionPage />} />
+                    <Route
+                        path="/vitals/edit/:id"
+                        element={<EditVitals />}
+                    />
 
-                        <Route path="/consent/view/:patientId" element={<ViewConsent />} />
+                    <Route path="/consent/add" element={<AddConsent />} />
 
-                        <Route path="/consent/edit/:patientId" element={<EditConsent />} />
-            </Routes>
+                    <Route path="/consent/view/:patientId" element={<ViewConsent />} />
+
+                    <Route path="/consent/edit/:patientId" element={<EditConsent />} />
+                </Routes>
+
+            </PortalGate>
 
         </BrowserRouter>
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 import Layout from "../../components/Layout"; // Change the path if needed
+import { getVitalsById } from "../../services/vitalsService";
 
 function ViewVitals() {
 
@@ -13,15 +13,14 @@ function ViewVitals() {
 
     useEffect(() => {
         getVitals();
+        const interval = setInterval(getVitals, 10000); // Poll every 10 seconds
+        return () => clearInterval(interval);
     }, []);
 
     const getVitals = async () => {
         try {
-
-            const res = await axios.get(
-                `http://localhost:8080/vitals/${id}`
-            );
-
+            const cleanId = (id || "").trim().replace(/\s+/g, "-");
+            const res = await getVitalsById(cleanId);
             setVitals(res.data);
 
         } catch (error) {

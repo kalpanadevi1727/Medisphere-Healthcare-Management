@@ -38,9 +38,9 @@ public class SecurityConfig {
 
                         .pathMatchers(HttpMethod.GET,"/fhir/**").hasAnyRole("ADMIN","DOCTOR","PATIENT")
 
-                        .pathMatchers(HttpMethod.POST,"/vitals/**").hasAnyRole("ADMIN","PATIENT")
+                        .pathMatchers(HttpMethod.POST,"/vitals/**").hasAnyRole("ADMIN","DOCTOR","PATIENT")
 
-                        .pathMatchers(HttpMethod.PUT,"/vitals/**").hasAnyRole("ADMIN","PATIENT")
+                        .pathMatchers(HttpMethod.PUT,"/vitals/**").hasAnyRole("ADMIN","DOCTOR","PATIENT")
 
                         .pathMatchers(HttpMethod.DELETE,"/vitals/**").hasRole("ADMIN")
 

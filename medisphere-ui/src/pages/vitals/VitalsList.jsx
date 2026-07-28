@@ -8,6 +8,7 @@ import {
     getAllVitals,
     deleteVitals
 } from "../../services/vitalsService";
+import { getAllHealthTwins } from "../../services/healthTwinService";
 
 function VitalsList() {
 
@@ -18,6 +19,7 @@ function VitalsList() {
     const [vitals, setVitals] = useState([]);
     const [search, setSearch] = useState("");
     const [myPatientId, setMyPatientId] = useState(null);
+    const [healthTwins, setHealthTwins] = useState([]);
 
     const navigate = useNavigate();
 
@@ -26,34 +28,38 @@ function VitalsList() {
         if (isPatient) {
             loadMyPatientId();
         }
+
+        const intervalId = setInterval(() => {
+            loadVitals();
+        }, 10000);
+
+        return () => {
+            clearInterval(intervalId);
+        };
     }, []);
 
-    const loadMyPatientId = async () => {
-        try {
-            const response = await getPatients();
-            const me = response.data.find(p => p.email?.toLowerCase() === userEmail?.toLowerCase());
-            if (me) {
-                setMyPatientId(me.patientId);
+    const loadMyPatientId = () => {
+        const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+        if (selectedPatientStr) {
+            try {
+                const selectedPatient = JSON.parse(selectedPatientStr);
+                setMyPatientId(selectedPatient.patientId);
+            } catch (err) {
+                console.error("Error parsing patient_portal_user", err);
             }
-        } catch (err) {
-            console.error("Error finding patient ID:", err);
         }
     };
 
     const loadVitals = async () => {
-
         try {
-
             const response = await getAllVitals();
-
             setVitals(response.data);
-
+            
+            const twinsRes = await getAllHealthTwins();
+            setHealthTwins(twinsRes.data || []);
         } catch (error) {
-
             console.log(error);
-
         }
-
     };
 
     const removeVitals = async (id) => {
@@ -82,6 +88,26 @@ function VitalsList() {
 
     // Filter vitals based on Patient ID
     const filteredVitals = vitals.filter((vital) => {
+        // Apply doctor specialty filtering based on health twin disease
+        const isDoctor = keycloak.hasRealmRole("DOCTOR") && !isAdmin;
+        if (isDoctor) {
+            const docUserStr = sessionStorage.getItem("doctor_portal_user");
+            let docUser = null;
+            if (docUserStr) {
+                try { docUser = JSON.parse(docUserStr); } catch (e) {}
+            }
+            const specialty = docUser ? docUser.role : null;
+            
+            const twin = healthTwins.find(t => t.patientId === vital.patientId);
+            const disease = twin ? twin.disease : null;
+            
+            if (specialty === "Cardiologist") {
+                if (disease !== "Cardiovascular Disease") return false;
+            } else if (specialty === "Diabetologist") {
+                if (disease !== "Diabetes") return false;
+            }
+        }
+
         if (isPatient && !isAdmin) {
             const addedPatientIds = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
             const allowedPatientIds = [myPatientId, ...addedPatientIds].filter(Boolean);

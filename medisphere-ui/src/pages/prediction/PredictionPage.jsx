@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Layout from "../../components/Layout";
 import { getPatients } from "../../services/patientService";
+import { getAllHealthTwins } from "../../services/healthTwinService";
+import keycloak from "../../auth/keycloak";
 import {
     predictCvd,
     predictDiabetes,
@@ -18,6 +20,16 @@ import {
 import { FaHeartbeat, FaSearch, FaHistory, FaBrain, FaCogs, FaCheckCircle, FaTrashAlt } from "react-icons/fa";
 
 function PredictionPage() {
+    // Fetch doctor specialty if logged in as a doctor
+    const docUserStr = sessionStorage.getItem("doctor_portal_user");
+    let docUser = null;
+    if (docUserStr) {
+        try { docUser = JSON.parse(docUserStr); } catch (e) {}
+    }
+    const specialty = docUser ? docUser.role : null;
+
+    const isPatient = keycloak.hasRealmRole("PATIENT") && !keycloak.hasRealmRole("ADMIN");
+
     // Navigation / Tab state
     const [activeTab, setActiveTab] = useState("dashboard");
 
@@ -34,7 +46,7 @@ function PredictionPage() {
     const [latestDiabetes, setLatestDiabetes] = useState(null);
     const [cvdExplanation, setCvdExplanation] = useState(null);
     const [diabetesExplanation, setDiabetesExplanation] = useState(null);
-    const [explanationTab, setExplanationTab] = useState("CVD"); // "CVD" or "DIABETES"
+    const [explanationTab, setExplanationTab] = useState(specialty === "Diabetologist" ? "DIABETES" : "CVD"); // "CVD" or "DIABETES"
 
     const activeExplanation = (explanationTab === "CVD" ? cvdExplanation : diabetesExplanation) || cvdExplanation || diabetesExplanation;
     
@@ -54,6 +66,8 @@ function PredictionPage() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
 
+    const isPredictingRef = useRef(false);
+
     useEffect(() => {
         loadPatients();
         loadModels();
@@ -61,24 +75,98 @@ function PredictionPage() {
     }, []);
 
     useEffect(() => {
+        let intervalId = null;
+
+        const runAutomaticPredictions = async (patientId, silent = false) => {
+            if (isPredictingRef.current) return;
+            isPredictingRef.current = true;
+            try {
+                const showCvd = !specialty || specialty === "Cardiologist" || specialty === "General Practitioner";
+                const showDiabetes = !specialty || specialty === "Diabetologist" || specialty === "General Practitioner";
+
+                const promises = [];
+                if (showCvd) {
+                    promises.push(predictCvd(patientId));
+                }
+                if (showDiabetes) {
+                    promises.push(predictDiabetes(patientId));
+                }
+                if (promises.length > 0) {
+                    await Promise.all(promises);
+                }
+                await loadPatientData(patientId, silent);
+            } catch (err) {
+                console.error("Automatic prediction failed", err);
+            } finally {
+                isPredictingRef.current = false;
+            }
+        };
+
         if (selectedPatientId) {
             const patient = patients.find(p => p.patientId === selectedPatientId);
             setSelectedPatient(patient);
-            loadPatientData(selectedPatientId);
+            
+            // Run predictions immediately on patient selection (with loading indicator)
+            runAutomaticPredictions(selectedPatientId, false);
+
+            // Set up interval to run predictions every 10 seconds quietly in the background
+            intervalId = setInterval(() => {
+                runAutomaticPredictions(selectedPatientId, true);
+            }, 10000);
         } else {
             setSelectedPatient(null);
             setPredictionHistory([]);
             setCurrentPrediction(null);
             setExplanation(null);
+            setLatestCvd(null);
+            setLatestDiabetes(null);
+            setCvdExplanation(null);
+            setDiabetesExplanation(null);
         }
-    }, [selectedPatientId]);
+
+        return () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+        };
+    }, [selectedPatientId, patients]);
 
     const loadPatients = async () => {
         try {
             const res = await getPatients();
-            setPatients(res.data || []);
-            if (res.data && res.data.length > 0) {
-                setSelectedPatientId(res.data[0].patientId);
+            let rawPatients = res.data || [];
+            
+            // Apply doctor specialty filtering
+            if (specialty === "Cardiologist" || specialty === "Diabetologist") {
+                const twinsRes = await getAllHealthTwins();
+                const twins = twinsRes.data || [];
+                rawPatients = rawPatients.filter(p => {
+                    const twin = twins.find(t => t.patientId === p.patientId);
+                    const disease = twin ? twin.disease : null;
+                    if (specialty === "Cardiologist") return disease === "Cardiovascular Disease";
+                    if (specialty === "Diabetologist") return disease === "Diabetes";
+                    return true;
+                });
+            }
+
+            // Apply patient portal role filtering
+            const isPatient = keycloak.hasRealmRole("PATIENT") && !keycloak.hasRealmRole("ADMIN");
+            if (isPatient) {
+                const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+                let selectedPatientId = null;
+                if (selectedPatientStr) {
+                    try {
+                        selectedPatientId = JSON.parse(selectedPatientStr).patientId;
+                    } catch (e) {}
+                }
+                const addedPatientIds = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
+                const allowedPatientIds = [selectedPatientId, ...addedPatientIds].filter(Boolean);
+                rawPatients = rawPatients.filter(p => allowedPatientIds.includes(p.patientId));
+            }
+
+            setPatients(rawPatients);
+            if (rawPatients.length > 0) {
+                setSelectedPatientId(rawPatients[0].patientId);
             }
         } catch (err) {
             console.error("Error loading patients", err);
@@ -112,8 +200,8 @@ function PredictionPage() {
         }
     };
 
-    const loadPatientData = async (patientId) => {
-        setLoading(true);
+    const loadPatientData = async (patientId, silent = false) => {
+        if (!silent) setLoading(true);
         try {
             // Load history
             const historyRes = await getPredictionHistory(patientId);
@@ -163,7 +251,7 @@ function PredictionPage() {
         } catch (err) {
             console.error("Error loading patient data", err);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
@@ -324,7 +412,7 @@ function PredictionPage() {
                                         onChange={(e) => setSelectedPatientId(e.target.value)}
                                         style={{ borderRadius: "10px" }}
                                     >
-                                        <option value="">-- Choose Patient --</option>
+                                        {!isPatient && <option value="">-- Choose Patient --</option>}
                                         {patients.map(p => (
                                             <option key={p.patientId} value={p.patientId}>
                                                 {p.firstname} {p.lastname} ({p.gender})
@@ -353,23 +441,11 @@ function PredictionPage() {
                                 )}
 
                                 {selectedPatient && (
-                                    <div className="d-grid gap-2">
-                                        <button
-                                            className="btn btn-primary btn-lg fw-bold shadow-sm d-flex align-items-center justify-content-center"
-                                            onClick={() => handlePredict("CVD")}
-                                            disabled={loading}
-                                            style={{ borderRadius: "10px" }}
-                                        >
-                                            <FaHeartbeat className="me-2" /> Predict CVD Risk
-                                        </button>
-                                        <button
-                                            className="btn btn-info btn-lg fw-bold text-white shadow-sm d-flex align-items-center justify-content-center"
-                                            onClick={() => handlePredict("Diabetes")}
-                                            disabled={loading}
-                                            style={{ borderRadius: "10px" }}
-                                        >
-                                            <FaBrain className="me-2" /> Predict Diabetes Risk
-                                        </button>
+                                    <div className="text-center p-2 bg-light rounded-3">
+                                        <small className="text-muted fw-bold d-flex align-items-center justify-content-center">
+                                            <FaBrain className="text-primary me-2 animate-pulse" />
+                                            Auto-monitoring Patient Vitals
+                                        </small>
                                     </div>
                                 )}
                             </div>
@@ -379,130 +455,134 @@ function PredictionPage() {
                         <div className="col-lg-8">
                             <div className="row g-4 mb-4">
                                 {/* Cardiovascular Assessment Card */}
-                                <div className="col-md-6">
-                                    {latestCvd ? (
-                                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
-                                            <div>
-                                                <h5 className="fw-bold mb-4 text-primary">Cardiovascular Assessment</h5>
-                                                <div className="text-center mb-3">
-                                                    <div 
-                                                        className="d-inline-flex align-items-center justify-content-center rounded-circle border-5 shadow"
-                                                        style={{
-                                                            width: "120px",
-                                                            height: "120px",
-                                                            border: `6px solid ${getRiskColor(latestCvd.riskLevel)}`,
-                                                            backgroundColor: "#f9fafb"
-                                                        }}
-                                                    >
-                                                        <div>
-                                                            <h3 className="fw-extrabold mb-0" style={{ color: getRiskColor(latestCvd.riskLevel) }}>
-                                                                {latestCvd.riskPercentage}%
-                                                            </h3>
-                                                            <span className="small text-muted uppercase fw-bold" style={{ fontSize: "10px" }}>Probability</span>
+                                {(!specialty || specialty === "Cardiologist" || specialty === "General Practitioner") && (
+                                    <div className={specialty === "Cardiologist" ? "col-12" : "col-md-6"}>
+                                        {latestCvd ? (
+                                            <div className="card border-0 shadow-sm rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                                                <div>
+                                                    <h5 className="fw-bold mb-4 text-primary">Cardiovascular Assessment</h5>
+                                                    <div className="text-center mb-3">
+                                                        <div 
+                                                            className="d-inline-flex align-items-center justify-content-center rounded-circle border-5 shadow"
+                                                            style={{
+                                                                width: "120px",
+                                                                height: "120px",
+                                                                border: `6px solid ${getRiskColor(latestCvd.riskLevel)}`,
+                                                                backgroundColor: "#f9fafb"
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <h3 className="fw-extrabold mb-0" style={{ color: getRiskColor(latestCvd.riskLevel) }}>
+                                                                    {latestCvd.riskPercentage}%
+                                                                </h3>
+                                                                <span className="small text-muted uppercase fw-bold" style={{ fontSize: "10px" }}>Probability</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center mb-3">
+                                                        <span className="badge px-3 py-2 text-white" style={{ backgroundColor: getRiskColor(latestCvd.riskLevel), borderRadius: "50px" }}>
+                                                            {latestCvd.riskLevel} RISK LEVEL
+                                                        </span>
+                                                    </div>
+                                                    <div className="small border-top pt-2">
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted">Model:</span>
+                                                            <span className="fw-bold">v{latestCvd.modelVersion}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted">Confidence:</span>
+                                                            <span className="fw-bold text-primary">{latestCvd.confidence}%</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between">
+                                                            <span className="text-muted">Date:</span>
+                                                            <span className="fw-bold">{latestCvd.predictionDate}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-center mb-3">
-                                                    <span className="badge px-3 py-2 text-white" style={{ backgroundColor: getRiskColor(latestCvd.riskLevel), borderRadius: "50px" }}>
-                                                        {latestCvd.riskLevel} RISK LEVEL
-                                                    </span>
-                                                </div>
-                                                <div className="small border-top pt-2">
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span className="text-muted">Model:</span>
-                                                        <span className="fw-bold">v{latestCvd.modelVersion}</span>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span className="text-muted">Confidence:</span>
-                                                        <span className="fw-bold text-primary">{latestCvd.confidence}%</span>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between">
-                                                        <span className="text-muted">Date:</span>
-                                                        <span className="fw-bold">{latestCvd.predictionDate}</span>
-                                                    </div>
-                                                </div>
+                                                {cvdExplanation && (
+                                                    <button 
+                                                        className="btn btn-outline-primary btn-sm mt-3 w-100 fw-bold"
+                                                        onClick={() => { setExplanationTab("CVD"); setActiveTab("explain"); }}
+                                                        style={{ borderRadius: "8px" }}
+                                                    >
+                                                        View SHAP Explanation
+                                                    </button>
+                                                )}
                                             </div>
-                                            {cvdExplanation && (
-                                                <button 
-                                                    className="btn btn-outline-primary btn-sm mt-3 w-100 fw-bold"
-                                                    onClick={() => { setExplanationTab("CVD"); setActiveTab("explain"); }}
-                                                    style={{ borderRadius: "8px" }}
-                                                >
-                                                    View SHAP Explanation
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white text-center text-muted h-100 d-flex flex-column justify-content-center align-items-center min-vh-25" style={{ minHeight: "280px" }}>
-                                            <FaHeartbeat size={40} className="text-muted mb-2 opacity-50" />
-                                            <h6>No CVD Assessment</h6>
-                                            <p className="small mb-0">Click Predict CVD Risk to calculate cardiovascular risks.</p>
-                                        </div>
-                                    )}
-                                </div>
+                                        ) : (
+                                            <div className="card border-0 shadow-sm rounded-3 p-4 bg-white text-center text-muted h-100 d-flex flex-column justify-content-center align-items-center min-vh-25" style={{ minHeight: "280px" }}>
+                                                <FaHeartbeat size={40} className="text-muted mb-2 opacity-50" />
+                                                <h6>No CVD Assessment</h6>
+                                                <p className="small mb-0">Click Predict CVD Risk to calculate cardiovascular risks.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Diabetes Assessment Card */}
-                                <div className="col-md-6">
-                                    {latestDiabetes ? (
-                                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
-                                            <div>
-                                                <h5 className="fw-bold mb-4 text-info">Diabetes Assessment</h5>
-                                                <div className="text-center mb-3">
-                                                    <div 
-                                                        className="d-inline-flex align-items-center justify-content-center rounded-circle border-5 shadow"
-                                                        style={{
-                                                            width: "120px",
-                                                            height: "120px",
-                                                            border: `6px solid ${getRiskColor(latestDiabetes.riskLevel)}`,
-                                                            backgroundColor: "#f9fafb"
-                                                        }}
-                                                    >
-                                                        <div>
-                                                            <h3 className="fw-extrabold mb-0" style={{ color: getRiskColor(latestDiabetes.riskLevel) }}>
-                                                                {latestDiabetes.riskPercentage}%
-                                                            </h3>
-                                                            <span className="small text-muted uppercase fw-bold" style={{ fontSize: "10px" }}>Probability</span>
+                                {(!specialty || specialty === "Diabetologist" || specialty === "General Practitioner") && (
+                                    <div className={specialty === "Diabetologist" ? "col-12" : "col-md-6"}>
+                                        {latestDiabetes ? (
+                                            <div className="card border-0 shadow-sm rounded-3 p-4 bg-white h-100 d-flex flex-column justify-content-between">
+                                                <div>
+                                                    <h5 className="fw-bold mb-4 text-info">Diabetes Assessment</h5>
+                                                    <div className="text-center mb-3">
+                                                        <div 
+                                                            className="d-inline-flex align-items-center justify-content-center rounded-circle border-5 shadow"
+                                                            style={{
+                                                                width: "120px",
+                                                                height: "120px",
+                                                                border: `6px solid ${getRiskColor(latestDiabetes.riskLevel)}`,
+                                                                backgroundColor: "#f9fafb"
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <h3 className="fw-extrabold mb-0" style={{ color: getRiskColor(latestDiabetes.riskLevel) }}>
+                                                                    {latestDiabetes.riskPercentage}%
+                                                                </h3>
+                                                                <span className="small text-muted uppercase fw-bold" style={{ fontSize: "10px" }}>Probability</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-center mb-3">
+                                                        <span className="badge px-3 py-2 text-white" style={{ backgroundColor: getRiskColor(latestDiabetes.riskLevel), borderRadius: "50px" }}>
+                                                            {latestDiabetes.riskLevel} RISK LEVEL
+                                                        </span>
+                                                    </div>
+                                                    <div className="small border-top pt-2">
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted">Model:</span>
+                                                            <span className="fw-bold">v{latestDiabetes.modelVersion}</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between mb-1">
+                                                            <span className="text-muted">Confidence:</span>
+                                                            <span className="fw-bold text-primary">{latestDiabetes.confidence}%</span>
+                                                        </div>
+                                                        <div className="d-flex justify-content-between">
+                                                            <span className="text-muted">Date:</span>
+                                                            <span className="fw-bold">{latestDiabetes.predictionDate}</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="text-center mb-3">
-                                                    <span className="badge px-3 py-2 text-white" style={{ backgroundColor: getRiskColor(latestDiabetes.riskLevel), borderRadius: "50px" }}>
-                                                        {latestDiabetes.riskLevel} RISK LEVEL
-                                                    </span>
-                                                </div>
-                                                <div className="small border-top pt-2">
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span className="text-muted">Model:</span>
-                                                        <span className="fw-bold">v{latestDiabetes.modelVersion}</span>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between mb-1">
-                                                        <span className="text-muted">Confidence:</span>
-                                                        <span className="fw-bold text-primary">{latestDiabetes.confidence}%</span>
-                                                    </div>
-                                                    <div className="d-flex justify-content-between">
-                                                        <span className="text-muted">Date:</span>
-                                                        <span className="fw-bold">{latestDiabetes.predictionDate}</span>
-                                                    </div>
-                                                </div>
+                                                {diabetesExplanation && (
+                                                    <button 
+                                                        className="btn btn-outline-info btn-sm mt-3 w-100 fw-bold text-info border-info"
+                                                        onClick={() => { setExplanationTab("DIABETES"); setActiveTab("explain"); }}
+                                                        style={{ borderRadius: "8px" }}
+                                                    >
+                                                        View SHAP Explanation
+                                                    </button>
+                                                )}
                                             </div>
-                                            {diabetesExplanation && (
-                                                <button 
-                                                    className="btn btn-outline-info btn-sm mt-3 w-100 fw-bold text-info border-info"
-                                                    onClick={() => { setExplanationTab("DIABETES"); setActiveTab("explain"); }}
-                                                    style={{ borderRadius: "8px" }}
-                                                >
-                                                    View SHAP Explanation
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="card border-0 shadow-sm rounded-3 p-4 bg-white text-center text-muted h-100 d-flex flex-column justify-content-center align-items-center min-vh-25" style={{ minHeight: "280px" }}>
-                                            <FaBrain size={40} className="text-muted mb-2 opacity-50" />
-                                            <h6>No Diabetes Assessment</h6>
-                                            <p className="small mb-0">Click Predict Diabetes Risk to calculate diabetes risks.</p>
-                                        </div>
-                                    )}
-                                </div>
+                                        ) : (
+                                            <div className="card border-0 shadow-sm rounded-3 p-4 bg-white text-center text-muted h-100 d-flex flex-column justify-content-center align-items-center min-vh-25" style={{ minHeight: "280px" }}>
+                                                <FaBrain size={40} className="text-muted mb-2 opacity-50" />
+                                                <h6>No Diabetes Assessment</h6>
+                                                <p className="small mb-0">Click Predict Diabetes Risk to calculate diabetes risks.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* History Table */}
@@ -524,7 +604,13 @@ function PredictionPage() {
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {predictionHistory.map(pred => (
+                                                {predictionHistory
+                                                    .filter(pred => {
+                                                        if (specialty === "Cardiologist") return pred.riskType === "CARDIO" || pred.riskType === "CVD";
+                                                        if (specialty === "Diabetologist") return pred.riskType === "DIABETES";
+                                                        return true;
+                                                    })
+                                                    .map(pred => (
                                                     <tr key={pred.id}>
                                                         <td className="fw-bold">{pred.riskType}</td>
                                                         <td>
@@ -561,26 +647,28 @@ function PredictionPage() {
                 {activeTab === "explain" && activeExplanation && (
                     <div className="card border-0 shadow-sm rounded-3 p-4 bg-white">
                         {/* Sub tabs for CVD vs Diabetes explanations */}
-                        <div className="d-flex justify-content-center mb-4">
-                            <div className="btn-group shadow-sm" role="group">
-                                <button
-                                    type="button"
-                                    className={`btn px-4 fw-bold ${explanationTab === "CVD" ? "btn-primary" : "btn-outline-primary"}`}
-                                    onClick={() => setExplanationTab("CVD")}
-                                    disabled={!cvdExplanation}
-                                >
-                                    Cardiovascular SHAP
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`btn px-4 fw-bold ${explanationTab === "DIABETES" ? "btn-primary" : "btn-outline-primary"}`}
-                                    onClick={() => setExplanationTab("DIABETES")}
-                                    disabled={!diabetesExplanation}
-                                >
-                                    Diabetes SHAP
-                                </button>
+                        {(!specialty || specialty === "General Practitioner") && (
+                            <div className="d-flex justify-content-center mb-4">
+                                <div className="btn-group shadow-sm" role="group">
+                                    <button
+                                        type="button"
+                                        className={`btn px-4 fw-bold ${explanationTab === "CVD" ? "btn-primary" : "btn-outline-primary"}`}
+                                        onClick={() => setExplanationTab("CVD")}
+                                        disabled={!cvdExplanation}
+                                    >
+                                        Cardiovascular SHAP
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`btn px-4 fw-bold ${explanationTab === "DIABETES" ? "btn-primary" : "btn-outline-primary"}`}
+                                        onClick={() => setExplanationTab("DIABETES")}
+                                        disabled={!diabetesExplanation}
+                                    >
+                                        Diabetes SHAP
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         <div className="d-flex align-items-center justify-content-between mb-4 border-bottom pb-3">
                             <div>

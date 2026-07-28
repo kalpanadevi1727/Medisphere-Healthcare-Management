@@ -26,15 +26,15 @@ function HealthTwinList() {
         }
     }, []);
 
-    const loadMyPatientId = async () => {
-        try {
-            const response = await getPatients();
-            const me = response.data.find(p => p.email?.toLowerCase() === userEmail?.toLowerCase());
-            if (me) {
-                setMyPatientId(me.patientId);
+    const loadMyPatientId = () => {
+        const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+        if (selectedPatientStr) {
+            try {
+                const selectedPatient = JSON.parse(selectedPatientStr);
+                setMyPatientId(selectedPatient.patientId);
+            } catch (err) {
+                console.error("Error parsing patient_portal_user", err);
             }
-        } catch (err) {
-            console.error("Error finding patient ID:", err);
         }
     };
 
@@ -80,6 +80,22 @@ function HealthTwinList() {
 
     // Search Filter
     const filteredHealthTwins = healthTwins.filter((twin) => {
+        // Apply doctor specialty filtering
+        const isDoctor = keycloak.hasRealmRole("DOCTOR") && !isAdmin;
+        if (isDoctor) {
+            const docUserStr = sessionStorage.getItem("doctor_portal_user");
+            let docUser = null;
+            if (docUserStr) {
+                try { docUser = JSON.parse(docUserStr); } catch (e) {}
+            }
+            const specialty = docUser ? docUser.role : null;
+            if (specialty === "Cardiologist") {
+                if (twin.disease !== "Cardiovascular Disease") return false;
+            } else if (specialty === "Diabetologist") {
+                if (twin.disease !== "Diabetes") return false;
+            }
+        }
+
         if (isPatient && !isAdmin) {
             const addedPatientIds = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
             const allowedPatientIds = [myPatientId, ...addedPatientIds].filter(Boolean);

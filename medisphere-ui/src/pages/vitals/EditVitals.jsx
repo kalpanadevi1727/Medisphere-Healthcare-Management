@@ -35,7 +35,8 @@ function EditVitals() {
 
   const loadVitals = async () => {
     try {
-      const response = await getVitalsById(id);
+      const cleanId = (id || "").trim().replace(/\s+/g, "-");
+      const response = await getVitalsById(cleanId);
       const data = response.data;
 
       setVitals({
@@ -76,8 +77,8 @@ function EditVitals() {
       } else if (vitals.bloodpressure) {
         systolic = parseInt(vitals.bloodpressure) || 120;
       }
-
-      await updateVitals(id, {
+      const cleanId = (id || "").trim().replace(/\s+/g, "-");
+      await updateVitals(cleanId, {
         patientId: vitals.patientId,
         heartbeat: vitals.heartbeat ? Number(vitals.heartbeat) : 0,
         bloodpressure: vitals.bloodpressure,

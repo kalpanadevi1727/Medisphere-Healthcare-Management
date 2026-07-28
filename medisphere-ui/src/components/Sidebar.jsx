@@ -5,12 +5,16 @@ import {
     FaStethoscope,
     FaHospital,
     FaFileSignature,
-    FaChartLine
+    FaChartLine,
+    FaTv
 } from "react-icons/fa";
 
 import { NavLink } from "react-router-dom";
+import keycloak from "../auth/keycloak";
 
 function Sidebar() {
+    const isDoctor = keycloak.hasRealmRole("DOCTOR");
+    const isAdmin = keycloak.hasRealmRole("ADMIN");
 
     const menuStyle = ({ isActive }) => ({
         backgroundColor: isActive ? "#2563eb" : "transparent",
@@ -85,6 +89,13 @@ function Sidebar() {
                     <FaChartLine className="me-3" />
                     Prediction
                 </NavLink>
+
+                {(isDoctor || isAdmin) && (
+                    <NavLink to="/patient-monitor" style={menuStyle}>
+                        <FaTv className="me-3" />
+                        Patient Monitor
+                    </NavLink>
+                )}
 
             </div>
 

@@ -6,6 +6,7 @@ import {
 } from "../../services/patientService";
 import { Link, useNavigate } from "react-router-dom";
 import keycloak from "../../auth/keycloak";
+import { getAllHealthTwins } from "../../services/healthTwinService";
 
 function PatientList() {
 
@@ -15,6 +16,8 @@ function PatientList() {
 
   const [patients, setPatients] = useState([]);
   const [search, setSearch] = useState("");
+
+  const [healthTwins, setHealthTwins] = useState([]);
 
   const navigate = useNavigate();
 
@@ -27,8 +30,10 @@ function PatientList() {
     try {
 
       const response = await getPatients();
-
       setPatients(response.data);
+      
+      const twinsRes = await getAllHealthTwins();
+      setHealthTwins(twinsRes.data || []);
 
     } catch (error) {
 
@@ -67,12 +72,37 @@ function PatientList() {
   };
 
   const filteredPatients = patients.filter((patient) => {
+    // Apply doctor specialty filtering based on health twin disease
+    const isDoctor = keycloak.hasRealmRole("DOCTOR") && !isAdmin;
+    if (isDoctor) {
+        const docUserStr = sessionStorage.getItem("doctor_portal_user");
+        let docUser = null;
+        if (docUserStr) {
+            try { docUser = JSON.parse(docUserStr); } catch (e) {}
+        }
+        const specialty = docUser ? docUser.role : null;
+        
+        const twin = healthTwins.find(t => t.patientId === patient.patientId);
+        const disease = twin ? twin.disease : null;
+        
+        if (specialty === "Cardiologist") {
+            if (disease !== "Cardiovascular Disease") return false;
+        } else if (specialty === "Diabetologist") {
+            if (disease !== "Diabetes") return false;
+        }
+    }
+
     if (isPatient && !isAdmin) {
+      const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+      let selectedPatientId = null;
+      if (selectedPatientStr) {
+        try {
+          selectedPatientId = JSON.parse(selectedPatientStr).patientId;
+        } catch (e) {}
+      }
       const addedPatientIds = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
-      return (
-        patient.email?.toLowerCase() === userEmail?.toLowerCase() ||
-        addedPatientIds.includes(patient.patientId)
-      );
+      const allowedPatientIds = [selectedPatientId, ...addedPatientIds].filter(Boolean);
+      return allowedPatientIds.includes(patient.patientId);
     }
 
     const fullname =

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class VitalsProducer {
 
-    private static final String TOPIC = "vitals-updated";
+    private static final String TOPIC = "vitals-stream";
 
     @Autowired
     private KafkaTemplate<String, VitalsUpdatedEvent> kafkaTemplate;

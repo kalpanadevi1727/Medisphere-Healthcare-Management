@@ -8,6 +8,15 @@ import {
     getAllConsents,
     revokeConsent
 } from "../../services/consentService";
+import { getAllHealthTwins } from "../../services/healthTwinService";
+
+const getConsentStatusBadge = (status) => {
+    const s = (status || "").toLowerCase().trim();
+    if (s === "approved" || s === "granted" || s === "active") return "badge bg-success"; // Green
+    if (s === "pending") return "badge bg-warning text-dark"; // Yellow
+    if (s === "revoke" || s === "revoked" || s === "expired") return "badge bg-danger"; // Red
+    return "badge bg-secondary"; // Default Grey
+};
 
 function ConsentList() {
 
@@ -18,6 +27,7 @@ function ConsentList() {
     const [consents, setConsents] = useState([]);
     const [search, setSearch] = useState("");
     const [myPatientId, setMyPatientId] = useState(null);
+    const [healthTwins, setHealthTwins] = useState([]);
 
     useEffect(() => {
         loadConsents();
@@ -26,33 +36,29 @@ function ConsentList() {
         }
     }, []);
 
-    const loadMyPatientId = async () => {
-        try {
-            const response = await getPatients();
-            const me = response.data.find(p => p.email?.toLowerCase() === userEmail?.toLowerCase());
-            if (me) {
-                setMyPatientId(me.patientId);
+    const loadMyPatientId = () => {
+        const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+        if (selectedPatientStr) {
+            try {
+                const selectedPatient = JSON.parse(selectedPatientStr);
+                setMyPatientId(selectedPatient.patientId);
+            } catch (err) {
+                console.error("Error parsing patient_portal_user", err);
             }
-        } catch (err) {
-            console.error("Error finding patient ID:", err);
         }
     };
 
     const loadConsents = async () => {
-
         try {
-
             const response = await getAllConsents();
-
             setConsents(response.data);
-
+            
+            const twinsRes = await getAllHealthTwins();
+            setHealthTwins(twinsRes.data || []);
         } catch (error) {
-
             console.log(error);
             alert("Failed to load consent records");
-
         }
-
     };
 
     const revoke = async (consentId) => {
@@ -81,6 +87,26 @@ function ConsentList() {
 
     // Search by Patient ID
     const filteredConsents = consents.filter((consent) => {
+        // Apply doctor specialty filtering based on health twin disease
+        const isDoctor = keycloak.hasRealmRole("DOCTOR") && !isAdmin;
+        if (isDoctor) {
+            const docUserStr = sessionStorage.getItem("doctor_portal_user");
+            let docUser = null;
+            if (docUserStr) {
+                try { docUser = JSON.parse(docUserStr); } catch (e) {}
+            }
+            const specialty = docUser ? docUser.role : null;
+            
+            const twin = healthTwins.find(t => t.patientId === consent.patientId);
+            const disease = twin ? twin.disease : null;
+            
+            if (specialty === "Cardiologist") {
+                if (disease !== "Cardiovascular Disease") return false;
+            } else if (specialty === "Diabetologist") {
+                if (disease !== "Diabetes") return false;
+            }
+        }
+
         if (isPatient && !isAdmin) {
             const addedPatientIds = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
             const allowedPatientIds = [myPatientId, ...addedPatientIds].filter(Boolean);
@@ -210,17 +236,9 @@ function ConsentList() {
                                         <td>{consent.consenttype}</td>
 
                                         <td>
-
-                                            <span
-                                                className={
-                                                    consent.status === "Granted"
-                                                        ? "badge bg-success"
-                                                        : "badge bg-danger"
-                                                }
-                                            >
+                                            <span className={getConsentStatusBadge(consent.status)}>
                                                 {consent.status}
                                             </span>
-
                                         </td>
 
                                         <td>{consent.granteddate}</td>

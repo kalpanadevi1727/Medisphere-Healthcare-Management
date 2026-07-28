@@ -49,6 +49,17 @@ function AddPatient() {
                 const addedList = JSON.parse(sessionStorage.getItem("session_added_patients") || "[]");
                 addedList.push(response.data.patientId);
                 sessionStorage.setItem("session_added_patients", JSON.stringify(addedList));
+
+                // Auto-login/associate profile if they logged in as a new patient
+                const selectedPatientStr = sessionStorage.getItem("patient_portal_user");
+                if (selectedPatientStr) {
+                    try {
+                        const parsed = JSON.parse(selectedPatientStr);
+                        if (parsed.patientId === "ADD_PATIENT") {
+                            sessionStorage.setItem("patient_portal_user", JSON.stringify(response.data));
+                        }
+                    } catch (e) {}
+                }
             }
 
             alert("Patient Added Successfully!");

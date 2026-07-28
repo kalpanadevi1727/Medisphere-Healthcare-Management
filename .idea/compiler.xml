@@ -9,7 +9,7 @@
         <module name="discoveryservice" />
         <module name="gatewayservice" />
       </profile>
-      <profile name="Annotation profile for consentservice" enabled="true">
+      <profile name="Annotation profile for vitalsservice" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -19,8 +19,8 @@
         <module name="consentservice" />
         <module name="healthtwinservice" />
         <module name="fhirservice" />
-        <module name="ai-prediction-service" />
         <module name="vitalsservice" />
+        <module name="ai-prediction-service" />
         <module name="patientservice" />
       </profile>
     </annotationProcessing>
