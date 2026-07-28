@@ -394,7 +394,6 @@ function AddPatient() {
                                             type="submit"
 
                                             className="btn btn-primary btn-lg me-3 px-5"
-                                            onClick={() => navigate("/patient")}
                                         >
 
                                             Save
