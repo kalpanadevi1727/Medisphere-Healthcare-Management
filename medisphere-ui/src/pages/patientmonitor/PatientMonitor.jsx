@@ -464,20 +464,11 @@ function PatientMonitor() {
                                                             <td className="text-end" onClick={(e) => e.stopPropagation()}>
                                                                 {alert.status !== "CLOSED" && alert.status !== "ACKNOWLEDGED" && (
                                                                     <button 
-                                                                        className="btn btn-sm btn-outline-success me-2"
+                                                                        className="btn btn-sm btn-outline-success"
                                                                         title="Acknowledge Alert"
                                                                         onClick={() => handleAcknowledge(alert.alertId)}
                                                                     >
                                                                         <FaCheck /> Ack
-                                                                    </button>
-                                                                )}
-                                                                {alert.status !== "CLOSED" && (
-                                                                    <button 
-                                                                        className="btn btn-sm btn-outline-danger"
-                                                                        title="Close Alert"
-                                                                        onClick={() => handleClose(alert.alertId)}
-                                                                    >
-                                                                        <FaTimes /> Close
                                                                     </button>
                                                                 )}
                                                             </td>

@@ -334,7 +334,7 @@ function PredictionPage() {
 
     return (
         <Layout>
-            <div className="container-fluid py-4" style={{ backgroundColor: "#f3f4f6", minHeight: "100vh" }}>
+            <div className="container-fluid py-4" style={{ backgroundColor: "#ffffff", minHeight: "100vh" }}>
                 {/* Header */}
                 <div className="d-flex align-items-center justify-content-between mb-4 bg-white p-4 rounded-3 shadow-sm">
                     <div>

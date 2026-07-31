@@ -47,7 +47,7 @@ function App() {
                         path="/patient/add"
                         element={<AddPatient />}
                     />
-                    <Route path="/patient/view/:id" element={<ViewPatient />} />
+                    <Route path="/patient/view/:id" element={<ViewFhir />} />
                     <Route path="/patient/edit/:id" element={<EditPatient />} />
                     <Route path="/healthtwin" element={<HealthTwinList />} />
                     <Route path="/healthtwin/add" element={<AddHealthTwin />} />

@@ -9,8 +9,12 @@ function PortalGate({ children }) {
     const [doctorLoggedIn, setDoctorLoggedIn] = useState(!!sessionStorage.getItem("doctor_portal_user"));
     const [patientLoggedIn, setPatientLoggedIn] = useState(!!sessionStorage.getItem("patient_portal_user"));
 
-    const [selectedDoctor, setSelectedDoctor] = useState("");
-    const [selectedPatientId, setSelectedPatientId] = useState("");
+    const [enteredName, setEnteredName] = useState("");
+    const [enteredTask, setEnteredTask] = useState("");
+    const [doctorLoginError, setDoctorLoginError] = useState("");
+    const [enteredPatientName, setEnteredPatientName] = useState("");
+    const [enteredPatientId, setEnteredPatientId] = useState("");
+    const [patientLoginError, setPatientLoginError] = useState("");
     const [patients, setPatients] = useState([]);
     const [loadingPatients, setLoadingPatients] = useState(false);
 
@@ -40,31 +44,80 @@ function PortalGate({ children }) {
 
     const handleDoctorLogin = (e) => {
         e.preventDefault();
-        if (!selectedDoctor) return;
-        const doc = DOCTORS_LIST.find(d => d.name === selectedDoctor);
-        if (doc) {
-            sessionStorage.setItem("doctor_portal_user", JSON.stringify(doc));
+        setDoctorLoginError("");
+
+        if (!enteredName || !enteredTask) return;
+
+        const nameInput = enteredName.trim().toLowerCase();
+        const taskInput = enteredTask.trim().toLowerCase();
+
+        // Check matching doctor
+        let matchedDoc = null;
+        if (
+            (nameInput.includes("alice") || nameInput === "dr. alice") && 
+            (taskInput.includes("cardio") || taskInput.includes("heart"))
+        ) {
+            matchedDoc = DOCTORS_LIST[0]; // Dr. Alice (Cardiologist)
+        } else if (
+            (nameInput.includes("bob") || nameInput === "dr. bob") && 
+            (taskInput.includes("diabet") || taskInput.includes("sugar"))
+        ) {
+            matchedDoc = DOCTORS_LIST[1]; // Dr. Bob (Diabetologist)
+        } else if (
+            (nameInput.includes("charlie") || nameInput === "dr. charlie") && 
+            (taskInput.includes("general") || taskInput.includes("practi") || taskInput === "gp")
+        ) {
+            matchedDoc = DOCTORS_LIST[2]; // Dr. Charlie (General Practitioner)
+        }
+
+        // Generic fallback check
+        if (!matchedDoc) {
+            matchedDoc = DOCTORS_LIST.find(d => {
+                const cleanName = d.name.toLowerCase();
+                const cleanRole = d.role.toLowerCase();
+                return (cleanName.includes(nameInput) || nameInput.includes(cleanName)) && 
+                       (cleanRole.includes(taskInput) || taskInput.includes(cleanRole));
+            });
+        }
+
+        if (matchedDoc) {
+            sessionStorage.setItem("doctor_portal_user", JSON.stringify(matchedDoc));
             setDoctorLoggedIn(true);
+        } else {
+            setDoctorLoginError("Access Denied: Incorrect doctor name or specific task.");
         }
     };
 
     const handlePatientLogin = (e) => {
         e.preventDefault();
-        if (!selectedPatientId) return;
-        
-        if (selectedPatientId === "ADD_PATIENT") {
-            const newPatientObj = { patientId: "ADD_PATIENT", firstname: "New", lastname: "Patient" };
-            sessionStorage.setItem("patient_portal_user", JSON.stringify(newPatientObj));
-            setPatientLoggedIn(true);
-            window.location.href = "/patient/add";
-            return;
-        }
+        setPatientLoginError("");
 
-        const patient = patients.find(p => p.patientId === selectedPatientId);
+        if (!enteredPatientName || !enteredPatientId) return;
+
+        const nameInput = enteredPatientName.trim().toLowerCase();
+        const idInput = enteredPatientId.trim().toLowerCase();
+
+        const patient = patients.find(p => {
+            const cleanId = (p.patientId || "").toLowerCase().trim();
+            const fullName = `${p.firstname || ""} ${p.lastname || ""}`.toLowerCase().trim();
+            
+            // Check if patientId matches and name is contained in full name (or vice versa)
+            return cleanId === idInput && (fullName.includes(nameInput) || nameInput.includes(fullName));
+        });
+
         if (patient) {
             sessionStorage.setItem("patient_portal_user", JSON.stringify(patient));
             setPatientLoggedIn(true);
+        } else {
+            setPatientLoginError("Access Denied: Incorrect Patient Name or Patient ID.");
         }
+    };
+
+    const handleRegisterRedirect = () => {
+        const newPatientObj = { patientId: "ADD_PATIENT", firstname: "New", lastname: "Patient" };
+        sessionStorage.setItem("patient_portal_user", JSON.stringify(newPatientObj));
+        setPatientLoggedIn(true);
+        window.location.href = "/patient/add";
     };
 
     // 1. Doctor Portal Login Gate
@@ -95,25 +148,42 @@ function PortalGate({ children }) {
                             </svg>
                         </div>
                         <h3 className="fw-bold mb-1 text-dark">Doctor Portal Login</h3>
-                        <p className="text-muted small">Please select your doctor profile to access clinical tools.</p>
+                        <p className="text-muted small">Please enter your credentials to verify access to clinical tools.</p>
                     </div>
                     
                     <form onSubmit={handleDoctorLogin}>
-                        <div className="mb-4 text-start">
-                            <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>CHOOSE PROFILE</label>
-                            <select 
-                                className="form-select form-select-lg border-2"
-                                value={selectedDoctor}
-                                onChange={(e) => setSelectedDoctor(e.target.value)}
+                        {doctorLoginError && (
+                            <div className="alert alert-danger py-2 px-3 mb-3 small fw-semibold text-start" style={{ borderRadius: "8px" }}>
+                                ⚠️ {doctorLoginError}
+                            </div>
+                        )}
+                        
+                        <div className="mb-3 text-start">
+                            <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>DOCTOR NAME</label>
+                            <input 
+                                type="text" 
+                                className="form-control form-control-lg border-2 text-dark"
+                                placeholder="Enter your name (e.g. Dr. Alice)"
+                                value={enteredName}
+                                onChange={(e) => setEnteredName(e.target.value)}
                                 style={{ borderRadius: "10px", fontSize: "16px" }}
                                 required
-                            >
-                                <option value="">-- Choose Doctor --</option>
-                                {DOCTORS_LIST.map(d => (
-                                    <option key={d.name} value={d.name}>{d.name}</option>
-                                ))}
-                            </select>
+                            />
                         </div>
+
+                        <div className="mb-4 text-start">
+                            <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>SPECIFIC TASK / SPECIALTY</label>
+                            <input 
+                                type="text" 
+                                className="form-control form-control-lg border-2 text-dark"
+                                placeholder="Enter specialty (e.g. Cardiologist)"
+                                value={enteredTask}
+                                onChange={(e) => setEnteredTask(e.target.value)}
+                                style={{ borderRadius: "10px", fontSize: "16px" }}
+                                required
+                            />
+                        </div>
+
                         <button 
                             type="submit" 
                             className="btn btn-primary btn-lg w-100 fw-bold shadow-sm"
@@ -154,7 +224,7 @@ function PortalGate({ children }) {
                             </svg>
                         </div>
                         <h3 className="fw-bold mb-1 text-dark">Patient Portal Login</h3>
-                        <p className="text-muted small">Please select your patient identity to access health twins and vitals.</p>
+                        <p className="text-muted small">Please enter your credentials to verify access to your health records.</p>
                     </div>
                     
                     {loadingPatients ? (
@@ -165,31 +235,55 @@ function PortalGate({ children }) {
                         </div>
                     ) : (
                         <form onSubmit={handlePatientLogin}>
-                            <div className="mb-4 text-start">
-                                <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>CHOOSE PROFILE</label>
-                                <select 
-                                    className="form-select form-select-lg border-2"
-                                    value={selectedPatientId}
-                                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                            {patientLoginError && (
+                                <div className="alert alert-danger py-2 px-3 mb-3 small fw-semibold text-start" style={{ borderRadius: "8px" }}>
+                                    ⚠️ {patientLoginError}
+                                </div>
+                            )}
+
+                            <div className="mb-3 text-start">
+                                <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>PATIENT NAME</label>
+                                <input 
+                                    type="text" 
+                                    className="form-control form-control-lg border-2 text-dark"
+                                    placeholder="Enter your full name"
+                                    value={enteredPatientName}
+                                    onChange={(e) => setEnteredPatientName(e.target.value)}
                                     style={{ borderRadius: "10px", fontSize: "16px" }}
                                     required
-                                >
-                                    <option value="">-- Choose Patient --</option>
-                                    <option value="ADD_PATIENT">-- Register / Add New Patient --</option>
-                                    {patients.map(p => (
-                                        <option key={p.patientId} value={p.patientId}>
-                                            {p.firstname} {p.lastname} ({p.gender})
-                                        </option>
-                                    ))}
-                                </select>
+                                />
                             </div>
+
+                            <div className="mb-3 text-start">
+                                <label className="form-label fw-bold text-secondary small" style={{ letterSpacing: "0.5px" }}>PATIENT ID</label>
+                                <input 
+                                    type="text" 
+                                    className="form-control form-control-lg border-2 text-dark"
+                                    placeholder="Enter your patient ID"
+                                    value={enteredPatientId}
+                                    onChange={(e) => setEnteredPatientId(e.target.value)}
+                                    style={{ borderRadius: "10px", fontSize: "16px" }}
+                                    required
+                                />
+                            </div>
+
                             <button 
                                 type="submit" 
-                                className="btn btn-success btn-lg w-100 fw-bold shadow-sm"
+                                className="btn btn-success btn-lg w-100 fw-bold shadow-sm mb-3"
                                 style={{ borderRadius: "10px", padding: "12px" }}
                             >
                                 Access Portal
                             </button>
+
+                            <div className="text-center pt-2 border-top" style={{ borderColor: "#f3f4f6" }}>
+                                <button
+                                    type="button"
+                                    className="btn btn-link text-success fw-bold text-decoration-none small"
+                                    onClick={handleRegisterRedirect}
+                                >
+                                    ➕ Register as a New Patient
+                                </button>
+                            </div>
                         </form>
                     )}
                 </div>

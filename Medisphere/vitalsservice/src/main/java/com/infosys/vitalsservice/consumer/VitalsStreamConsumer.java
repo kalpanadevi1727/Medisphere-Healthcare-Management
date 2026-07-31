@@ -100,11 +100,14 @@ public class VitalsStreamConsumer {
             boolean shouldSkip = false;
             for (Alert ext : existingAlerts) {
                 if ("ACKNOWLEDGED".equals(ext.getStatus())) {
-                    String existingType = getBreachType(ext.getDescription());
-                    String newType = getBreachType(alert.getDescription());
-                    if (existingType.equals(newType)) {
-                        shouldSkip = true;
-                        break;
+                    // Check if the acknowledged alert is within the last 2 minutes (120,000 ms)
+                    if (ext.getTimestamp() != null && ext.getTimestamp().isAfter(LocalDateTime.now().minusMinutes(2))) {
+                        String existingType = getBreachType(ext.getDescription());
+                        String newType = getBreachType(alert.getDescription());
+                        if (existingType.equals(newType)) {
+                            shouldSkip = true;
+                            break;
+                        }
                     }
                 }
             }
